@@ -130,15 +130,11 @@ function card(s,label){const x=st(s),moved=S.mv[s.id]&&S.mv[s.id]!==s.base,late=
  return h}
 function head(all){const r=all.find(s=>s.id==="26l").date,d=Math.round((pd(r)-pd(TODAY))/864e5);
  return `<div class="top"><h1>Objectif 15 km · 1 h 15</h1><b>${d>0?"J−"+d:d===0?"C’est aujourd’hui !":"Course passée"}</b></div>`}
-function viewToday(all){let h=head(all);const nowS=all.filter(s=>s.date===TODAY),late=all.filter(s=>!st(s).s&&s.date<TODAY&&s.date>=add(TODAY,-14)).sort((a,b)=>a.date<b.date?-1:1);
- if(TODAY<mon(S.start)){h+=`<div class="card"><p class="kind">Le programme commence le</p><h2 class="big sm">${esc(fmt(mon(S.start)))}</h2><p class="desc">Repose-toi, hydrate-toi, prépare tes chaussures.</p></div>`}
- late.forEach(s=>{h+=card(s,"En retard · "+fmt(s.date))});
- nowS.forEach(s=>{h+=card(s,"Aujourd’hui · "+fmt(s.date))});
- if(pd(TODAY).getDay()===3&&TODAY>=mon(S.start)){const on=S.ren[TODAY];h+=`<div class="card"><div class="kind">Aujourd’hui · mercredi</div><h2 class="big sm">Renforcement bas du corps</h2><p class="desc">Séance facultative : squats, fentes, pont fessier, mollets. Jour de repos de course.</p><button class="${on?"main":""}" data-a="ren" style="width:100%">${on?"Faite ✓":"Marquer comme faite"}</button></div>`}
- if(!nowS.length&&!late.length&&!(pd(TODAY).getDay()===3)){const nx=all.filter(s=>s.date>TODAY&&!st(s).s).sort((a,b)=>a.date<b.date?-1:1)[0];
-  h+=`<div class="empty">Jour de repos aujourd’hui.</div>`;if(nx)h+=card(nx,"Prochaine séance · "+fmt(nx.date))}
- else if(!nowS.length&&!late.length){const nx=all.filter(s=>s.date>TODAY&&!st(s).s).sort((a,b)=>a.date<b.date?-1:1)[0];if(nx)h+=card(nx,"Prochaine séance · "+fmt(nx.date))}
- const rec=all.filter(s=>st(s).s==="done"&&s.date<TODAY&&s.date>=add(TODAY,-7)).sort((a,b)=>a.date<b.date?1:-1).slice(0,2);if(rec.length)h+=`<h2 class="sub">Séances récentes : ajoute ta distance, ton allure et ton ressenti</h2>`+rec.map(s=>card(s,fmt(s.date))).join("");return h}
+function viewToday(all){let h=head(all);const nowS=all.filter(s=>s.date===TODAY);
+ if(nowS.length)nowS.forEach(s=>{h+=card(s,"Aujourd’hui · "+fmt(s.date))});
+ else if(TODAY<mon(S.start))h+=`<div class="card"><p class="kind">Le programme commence le</p><h2 class="big sm">${esc(fmt(mon(S.start)))}</h2><p class="desc">Pas de séance pour l’instant.</p></div>`;
+ else h+=`<div class="card"><div class="kind">${esc(fmt(TODAY))}</div><h2 class="big sm">Jour de repos</h2><p class="desc">Pas de séance aujourd’hui. Récupère bien.</p></div>`;
+ return h}
 function viewPlan(all){let h=head(all);const curN=(all.find(s=>s.date>=TODAY)||{}).n||26;if(openW===null)openW=curN;
  W.forEach((w,i)=>{const n=i+1,ss=all.filter(s=>s.n===n),p=phase(n),o=openW===n;
   h+=`<div class="wk ${n===curN?"cur":""}"><button data-a="week" data-n="${n}" aria-expanded="${o}"><span>Semaine ${n}<small>${p[2]} · ${esc(fmt(ss[0].date).replace(/^\S+ /,""))}</small></span><span class="dots">${ss.map(s=>`<i class="${st(s).s||""}"></i>`).join("")}</span></button>`;
@@ -148,7 +144,7 @@ function viewPlan(all){let h=head(all);const curN=(all.find(s=>s.date>=TODAY)||{
 function viewStats(all){const done=all.filter(s=>st(s).s==="done"),pastAll=all.filter(s=>s.date<=TODAY),fs=done.filter(s=>st(s).r),avg=fs.length?(fs.reduce((a,s)=>a+st(s).r,0)/fs.length):0;
  const full=W.filter((w,i)=>all.filter(s=>s.n===i+1).every(s=>st(s).s==="done")).length;
  let h=head(all)+`<div class="card"><div class="kind">Progression du programme</div><div class="big sm">${done.length} / ${all.length} séances</div><div class="bar"><i style="width:${done.length/all.length*100}%"></i></div></div>`;
- h+=`<div class="stats"><div class="stat"><b>${full}</b><span>semaines complètes</span></div><div class="stat"><b>${pastAll.length?Math.round(done.length/pastAll.length*100)+" %":"–"}</b><span>séances faites parmi celles échues</span></div><div class="stat"><b>${avg?avg.toFixed(1)+"/10":"–"}</b><span>ressenti moyen</span></div><div class="stat"><b>${done.reduce((a,s)=>a+(parseFloat(String(st(s).d||"").replace(",","."))||0),0).toFixed(1).replace(".",",")} km</b><span>distance totale</span></div><div class="stat"><b>${Object.keys(S.ren).length}</b><span>renforcements faits</span></div></div>`;
+ h+=`<div class="stats"><div class="stat"><b>${full}</b><span>semaines complètes</span></div><div class="stat"><b>${pastAll.length?Math.round(done.length/pastAll.length*100)+" %":"–"}</b><span>séances faites parmi celles échues</span></div><div class="stat"><b>${avg?avg.toFixed(1)+"/10":"–"}</b><span>ressenti moyen</span></div><div class="stat"><b>${done.reduce((a,s)=>a+(parseFloat(String(st(s).d||"").replace(",","."))||0),0).toFixed(1).replace(".",",")} km</b><span>distance totale</span></div></div>`;
  h+=`<div class="card"><div class="kind">Les 26 semaines</div><div class="grid">${W.map((w,i)=>{const ss=all.filter(s=>s.n===i+1),d=ss.filter(s=>st(s).s==="done").length;return `<i class="${d===3?"f":d>0?"p":""}" title="Semaine ${i+1} : ${d}/3"></i>`}).join("")}</div><p class="desc" style="margin:10px 0 0;font-size:14px">Vert : semaine complète. Jaune : en cours. Gris : à venir ou non faite.</p></div>`;
  h+=`<div class="card"><div class="kind">Réglages</div><label class="l" for="st">Date de début du programme (le lundi de cette semaine devient la semaine 1)</label><input type="date" id="st" value="${S.start}" data-start="1"><p class="desc" style="margin:10px 0;font-size:14px">Tes données restent sur cet appareil, dans ce navigateur.</p><button data-a="reset">${confirmReset?"Confirmer : tout effacer":"Tout réinitialiser"}</button></div>`;
  return h}
