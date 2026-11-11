@@ -108,6 +108,10 @@ const pc=n=>7.2-(n-1)*.07;
 const fk=v=>(Math.round(v*2)/2).toString().replace(".",",")+" km";
 const fm=(min,n)=>{const d=min/(pc(n)-1)*1000;return d<1000?Math.round(d/50)*50+" m":(Math.round(d/100)/10).toString().replace(".",",")+" km"};
 const title=s=>{if(s.t==="e")return fk(s.w[0]/pc(s.n));if(s.t==="l")return s.n===26?"Course 15 km":fk(s.w[2]/(pc(s.n)+.35));return s.w[1]};
+const pl=L=>L.map(s=>{const x=S.st[s.id]||{},m=String(x.p||"").trim().match(/^(\d+)(?::(\d{1,2}))?$/);return m?{v:+m[1]+(m[2]?+m[2]/60:0),k:parseFloat(String(x.d||"").replace(",","."))||1}:null}).filter(Boolean);
+const fpace=v=>{let mi=Math.floor(v),se=Math.round((v-mi)*60);if(se===60){mi++;se=0}return mi+":"+String(se).padStart(2,"0")+" /km"};
+const avgP=L=>{const a=pl(L);if(!a.length)return"–";const w=a.reduce((n,x)=>n+x.k,0);return fpace(a.reduce((n,x)=>n+x.v*x.k,0)/w)};
+const bestP=L=>{const a=pl(L);return a.length?fpace(Math.min(...a.map(x=>x.v))):"–"};
 const tot=s=>{const m=s.w[1].match(/^(\d+) × (\d+) min/);if(m)return(+m[1]*+m[2]+(+m[1]-1)*2+15)/(pc(s.n)+.2);return s.n===26?3:7};
 function detail(s){const p=phase(s.n);
  if(s.t==="e")return `Allure confortable, respiration maîtrisée, conversation possible. Distance estimée selon ton allure du moment : ajuste-la à tes sensations.`;
@@ -144,7 +148,7 @@ function viewPlan(all){let h=head(all);const curN=(all.find(s=>s.date>=TODAY)||{
 function viewStats(all){const done=all.filter(s=>st(s).s==="done"),pastAll=all.filter(s=>s.date<=TODAY),fs=done.filter(s=>st(s).r),avg=fs.length?(fs.reduce((a,s)=>a+st(s).r,0)/fs.length):0;
  const full=W.filter((w,i)=>all.filter(s=>s.n===i+1).every(s=>st(s).s==="done")).length;
  let h=head(all)+`<div class="card"><div class="kind">Progression du programme</div><div class="big sm">${done.length} / ${all.length} séances</div><div class="bar"><i style="width:${done.length/all.length*100}%"></i></div></div>`;
- h+=`<div class="stats"><div class="stat"><b>${full}</b><span>semaines complètes</span></div><div class="stat"><b>${pastAll.length?Math.round(done.length/pastAll.length*100)+" %":"–"}</b><span>séances faites parmi celles échues</span></div><div class="stat"><b>${avg?avg.toFixed(1)+"/10":"–"}</b><span>ressenti moyen</span></div><div class="stat"><b>${done.reduce((a,s)=>a+(parseFloat(String(st(s).d||"").replace(",","."))||0),0).toFixed(1).replace(".",",")} km</b><span>distance totale</span></div></div>`;
+ h+=`<div class="stats"><div class="stat"><b>${full}</b><span>semaines complètes</span></div><div class="stat"><b>${pastAll.length?Math.round(done.length/pastAll.length*100)+" %":"–"}</b><span>séances faites parmi celles échues</span></div><div class="stat"><b>${avg?avg.toFixed(1)+"/10":"–"}</b><span>ressenti moyen</span></div><div class="stat"><b>${done.reduce((a,s)=>a+(parseFloat(String(st(s).d||"").replace(",","."))||0),0).toFixed(1).replace(".",",")} km</b><span>distance totale</span></div><div class="stat"><b>${avgP(done)}</b><span>allure moyenne (pondérée par la distance)</span></div><div class="stat"><b>${bestP(done)}</b><span>meilleure allure</span></div></div>`;
  h+=`<div class="card"><div class="kind">Les 26 semaines</div><div class="grid">${W.map((w,i)=>{const ss=all.filter(s=>s.n===i+1),d=ss.filter(s=>st(s).s==="done").length;return `<i class="${d===3?"f":d>0?"p":""}" title="Semaine ${i+1} : ${d}/3"></i>`}).join("")}</div><p class="desc" style="margin:10px 0 0;font-size:14px">Vert : semaine complète. Jaune : en cours. Gris : à venir ou non faite.</p></div>`;
  h+=`<div class="card"><div class="kind">Réglages</div><label class="l" for="st">Date de début du programme (le lundi de cette semaine devient la semaine 1)</label><input type="date" id="st" value="${S.start}" data-start="1"><p class="desc" style="margin:10px 0;font-size:14px">Tes données restent sur cet appareil, dans ce navigateur.</p><button data-a="reset">${confirmReset?"Confirmer : tout effacer":"Tout réinitialiser"}</button></div>`;
  return h}
